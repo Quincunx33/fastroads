@@ -363,10 +363,12 @@
       // keep road ref fresh every frame
       if (window.__ROAD) ROAD.vehicleNode = window.__ROAD.vehicleNode;
 
-      var p = RD.car;
+            var p = RD.car;
       var playerPos = p && (p.position || p.pPosition || p.pos);
+      if (!playerPos && ROAD.vehicleNode && ROAD.vehicleNode.p) {
+        playerPos = ROAD.vehicleNode.p;
+      }
       if (!playerPos) return;
-
       var dtClamped = Math.min(dt, 0.1);
 
       if (STATE.crashCooldown > 0) STATE.crashCooldown -= dtClamped;
