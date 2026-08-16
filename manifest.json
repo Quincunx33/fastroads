@@ -1,14 +1,19 @@
 {
-  "short_name": "slowroads",
-  "name": "Slow Roads",
+  "short_name": "Fast Roads",
+  "name": "Fast Roads — Endless Driving",
+  "description": "A calm endless-driving experience with customizable controls and two-way traffic.",
   "icons": [
     {
-      "src": "favicon_circle.svg",
-      "sizes": "any"
+      "src": "./static/media/favicon_circle_white.eb1953e3.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "orientation": "landscape",
+  "theme_color": "#101010",
+  "background_color": "#101010"
 }
