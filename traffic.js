@@ -56,7 +56,7 @@
       COUNT: 8,
       SAME_DIR: 4,
       ONCOMING: 4,
-      LANE_HALF: 1.6, // meters
+      LANE_HALF: 1.05, // meters; keep traffic visibly within the road lanes
       SAME_SPEED_MIN: 14,
       SAME_SPEED_MAX: 24,
       ON_SPEED_MIN: 18,
@@ -236,7 +236,7 @@
       var vNode = ROAD.vehicleNode;
       if (!vNode) return false;
       // oncoming cars: spawn ahead (further along road) so they approach player
-      var ahead = mode === "same" ? Math.floor(randomRange(3, 9)) : Math.floor(randomRange(6, 14));
+      var ahead = mode === "same" ? Math.floor(randomRange(1, 4)) : Math.floor(randomRange(2, 5));
       var baseNode = walkNode(vNode, ahead, 1);
       if (!baseNode) return false;
       var dir = mode === "same" ? 1 : -1;
@@ -250,6 +250,8 @@
       if (car.dead) return false;
       STATE.cars.push(car);
       car.mesh.visible = true;
+      // Place the mesh immediately; otherwise the first frame can leave it at (0,0,0).
+      car.update(0.016);
       if (window.__SCENE) window.__SCENE.add(car.mesh);
       return true;
     }
@@ -262,8 +264,8 @@
       }
       var steps =
         mode === "same"
-          ? Math.floor(randomRange(CFG.SPAWN_AHEAD_MIN, CFG.SPAWN_AHEAD_MAX) / 6)
-          : Math.floor(randomRange(CFG.SPAWN_AHEAD_MIN, CFG.SPAWN_AHEAD_MAX) / 6);
+          ? Math.floor(randomRange(20, 60) / 6)
+          : Math.floor(randomRange(20, 60) / 6);
       // oncoming cars spawn far ahead in travel direction (+1 along road)
       var node = walkNode(vNode, steps, 1);
       if (!node) {
@@ -281,14 +283,16 @@
       car.dead = false;
       car.mesh.visible = true;
       car.recomputeDist();
+      car.update(0.016);
     }
 
     // ---------- collision with player ----------
     var _dv = new Vector3();
     function checkPlayerCollision(car) {
       var p = RD.car;
-      if (!p || !p.position) return;
-      _dv.subVectors(car.pos, p.position);
+      var playerPos = p && (p.position || p.pPosition || p.pos);
+      if (!playerPos) return;
+      _dv.subVectors(car.pos, playerPos);
       var dx = _dv.x,
         dz = _dv.z,
         dy = _dv.y;
@@ -358,7 +362,8 @@
       if (window.__ROAD) ROAD.vehicleNode = window.__ROAD.vehicleNode;
 
       var p = RD.car;
-      if (!p || !p.position) return;
+      var playerPos = p && (p.position || p.pPosition || p.pos);
+      if (!playerPos) return;
 
       var dtClamped = Math.min(dt, 0.1);
 
@@ -403,8 +408,8 @@
         if (c.dead) continue;
 
         // cull cars too far from player
-        var ddx = c.pos.x - p.position.x,
-          ddz = c.pos.z - p.position.z;
+        var ddx = c.pos.x - playerPos.x,
+          ddz = c.pos.z - playerPos.z;
         if (ddx * ddx + ddz * ddz > 400 * 400) {
           respawn(c, c.dir > 0 ? "same" : "on");
           continue;

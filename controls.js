@@ -82,8 +82,9 @@
     var overlay = document.createElement("div");
     overlay.id = "fr-mobile-controls";
     overlay.innerHTML =
-      '<div class="fr-zone fr-joystick" id="fr-joystick">' +
-      '  <div class="fr-joystick-thumb" id="fr-joystick-thumb"></div>' +
+      '<div class="fr-steer-buttons" aria-label="Steering">' +
+      '  <button class="fr-steer fr-steer-left" id="fr-steer-left" type="button" aria-label="Steer left">◀</button>' +
+      '  <button class="fr-steer fr-steer-right" id="fr-steer-right" type="button" aria-label="Steer right">▶</button>' +
       "</div>" +
       '<div class="fr-pedals">' +
       '  <div class="fr-pedal fr-pedal-brake" id="fr-brake">' +
@@ -108,12 +109,11 @@
       "#fr-mobile-controls.fr-hidden{display:none}",
       "#fr-mobile-controls > *{pointer-events:auto;}",
       ".fr-zone{position:absolute;}",
-      "#fr-joystick{left:18px;bottom:24px;width:150px;height:150px;",
-      "  border-radius:50%;background:rgba(255,255,255,.12);",
-      "  border:2px solid rgba(255,255,255,.35);",
-      "  display:flex;align-items:center;justify-content:center;touch-action:none;}",
-      ".fr-joystick-thumb{width:64px;height:64px;border-radius:50%;",
-      "  background:rgba(255,255,255,.45);transition:transform .05s linear;}",
+      ".fr-steer-buttons{position:absolute;left:18px;bottom:24px;display:flex;gap:12px;touch-action:none;}",
+      ".fr-steer{width:82px;height:82px;border-radius:18px;background:rgba(255,255,255,.16);",
+      "  border:2px solid rgba(255,255,255,.42);color:#fff;font:700 34px/1 system-ui,sans-serif;",
+      "  text-align:center;touch-action:none;-webkit-tap-highlight-color:transparent;}",
+      ".fr-steer:active,.fr-steer.fr-active{filter:brightness(1.7);background:rgba(255,255,255,.32);}",
       ".fr-pedals{position:absolute;right:18px;bottom:24px;",
       "  display:flex;flex-direction:column;gap:12px;touch-action:none;}",
       ".fr-pedal{width:84px;height:84px;border-radius:18px;",
@@ -132,8 +132,7 @@
       ".fr-pedal.fr-active,.fr-sidebtn.fr-active{filter:brightness(1.6);}",
       ".fr-hide{display:none !important;}",
       "@media (max-height:520px){",
-      "  #fr-joystick{width:120px;height:120px;bottom:14px;}",
-      "  .fr-joystick-thumb{width:50px;height:50px;}",
+      "  .fr-steer{width:68px;height:68px;font-size:28px;}",
       "  .fr-pedal{width:68px;height:68px;}",
       "  .fr-sidebtn{width:52px;height:52px;font-size:11px;}",
       "}",
@@ -156,60 +155,38 @@
       return;
     }
 
-    /* ---------- joystick (steering) ---------- */
-
-    var joy = document.getElementById("fr-joystick");
-    var joyThumb = document.getElementById("fr-joystick-thumb");
-    var joyTouch = null;
-    var steerX = 0;
-
-    function setSteer(x) {
-      steerX = Math.max(-1, Math.min(1, x));
-      joyThumb.style.transform = "translateX(" + (steerX * 40) + "px)";
-      // Left/Right = A/D (game treats held keys as continuous steering)
-      keyDown("KeyA");
-      keyDown("KeyD");
-      if (steerX < -0.25) keyUp("KeyD");
-      if (steerX > 0.25) keyUp("KeyA");
-      if (steerX >= -0.25 && steerX <= 0.25) {
-        keyUp("KeyA");
-        keyUp("KeyD");
+    /* ---------- steering buttons ---------- */
+    function bindSteerButton(id, code) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var held = false;
+      function start(e) {
+        if (e) e.preventDefault();
+        if (held) return;
+        held = true;
+        keyDown(code);
+        el.classList.add("fr-active");
       }
-    }
-
-    joy.addEventListener(
-      "touchstart",
-      function (e) {
-        if (joyTouch !== null) return;
-        e.preventDefault();
-        joyTouch = e.changedTouches[0].identifier;
-        handleJoyMove(e);
-      },
-      { passive: false }
-    );
-
-    function handleJoyMove(e) {
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        var t = e.changedTouches[i];
-        if (t.identifier !== joyTouch) continue;
-        var r = joy.getBoundingClientRect();
-        var x = (t.clientX - r.left - r.width / 2) / (r.width / 2);
-        setSteer(x);
+      function stop(e) {
+        if (e) e.preventDefault();
+        if (!held) return;
+        held = false;
+        keyUp(code);
+        el.classList.remove("fr-active");
       }
+      el.addEventListener("pointerdown", start, { passive: false });
+      el.addEventListener("pointerup", stop, { passive: false });
+      el.addEventListener("pointercancel", stop, { passive: false });
+      el.addEventListener("pointerleave", stop, { passive: false });
+      el.addEventListener("touchstart", start, { passive: false });
+      el.addEventListener("touchend", stop, { passive: false });
+      el.addEventListener("touchcancel", stop, { passive: false });
+      el.addEventListener("mousedown", start, { passive: false });
+      el.addEventListener("mouseup", stop, { passive: false });
+      el.addEventListener("mouseleave", stop, { passive: false });
     }
-
-    function endJoy(e) {
-      for (var i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === joyTouch) {
-          joyTouch = null;
-          setSteer(0);
-        }
-      }
-    }
-
-    joy.addEventListener("touchmove", handleJoyMove, { passive: false });
-    joy.addEventListener("touchend", endJoy);
-    joy.addEventListener("touchcancel", endJoy);
+    bindSteerButton("fr-steer-left", "KeyA");
+    bindSteerButton("fr-steer-right", "KeyD");
 
     /* ---------- pedals & side buttons ---------- */
 

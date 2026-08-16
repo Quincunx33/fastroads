@@ -17513,7 +17513,6 @@
             this.updateVehicleNode();
           (window.__ROAD.vehicleNode = Ke.vehicleNode);
           try {
-            window.__onFrame && window.__onFrame(e);
             this.audio.update(e);
           } catch (Tc) {
             if ((this.handleCrash(), this.didCrash))
@@ -19183,6 +19182,8 @@
           }
           update(e, t) {
             try {
+              window.__ROAD && (window.__ROAD.vehicleNode = Ke.vehicleNode);
+              window.__onFrame && window.__onFrame(e);
               if (((this.physDT += e), this.physDT > this.maxPhysDT))
                 for (
                   this.vehicleController.update(this.maxPhysDT, t),
