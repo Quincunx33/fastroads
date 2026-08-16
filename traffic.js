@@ -140,6 +140,8 @@
       this.pos = new Vector3();
       this.mesh = buildCarMesh(color, dir < 0);
       this.mesh.visible = false;
+      this.mesh.frustumCulled = false;
+      this.mesh.renderOrder = 20;
       this.dead = false;
       this.recomputeDist();
     }
@@ -236,7 +238,7 @@
       var vNode = ROAD.vehicleNode;
       if (!vNode) return false;
       // oncoming cars: spawn ahead (further along road) so they approach player
-      var ahead = mode === "same" ? Math.floor(randomRange(1, 4)) : Math.floor(randomRange(2, 5));
+      var ahead = mode === "same" ? Math.floor(randomRange(0, 2)) : Math.floor(randomRange(1, 3));
       var baseNode = walkNode(vNode, ahead, 1);
       if (!baseNode) return false;
       var dir = mode === "same" ? 1 : -1;
@@ -244,15 +246,15 @@
         mode === "same"
           ? randomRange(CFG.SAME_SPEED_MIN, CFG.SAME_SPEED_MAX)
           : randomRange(CFG.ON_SPEED_MIN, CFG.ON_SPEED_MAX);
-      var lane = mode === "same" ? 1 : -1;
+      var lane = mode === "same" ? 0.75 : -0.75;
       var color = CAR_COLORS[(CAR_COLORS.length * Math.random()) | 0];
       var car = new AICar(baseNode, lane, speed, dir, color);
       if (car.dead) return false;
       STATE.cars.push(car);
       car.mesh.visible = true;
+      if (window.__SCENE && !car.mesh.parent) window.__SCENE.add(car.mesh);
       // Place the mesh immediately; otherwise the first frame can leave it at (0,0,0).
       car.update(0.016);
-      if (window.__SCENE) window.__SCENE.add(car.mesh);
       return true;
     }
 

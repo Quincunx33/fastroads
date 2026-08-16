@@ -101,6 +101,9 @@
 
     var style = document.createElement("style");
     style.textContent = [
+      "html,body{width:100%;height:100%;overflow:hidden;}",
+      "button,#fr-mobile-controls,#fr-mobile-controls *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-user-drag:none;}",
+      "#fr-mobile-controls{overscroll-behavior:none;}",
       "#fr-mobile-controls{",
       "  position:fixed;inset:0;z-index:9999;",
       "  display:block;pointer-events:none;touch-action:none;",
@@ -109,21 +112,21 @@
       "#fr-mobile-controls.fr-hidden{display:none}",
       "#fr-mobile-controls > *{pointer-events:auto;}",
       ".fr-zone{position:absolute;}",
-      ".fr-steer-buttons{position:absolute;left:18px;bottom:24px;display:flex;gap:12px;touch-action:none;}",
-      ".fr-steer{width:82px;height:82px;border-radius:18px;background:rgba(255,255,255,.16);",
+      ".fr-steer-buttons{position:absolute;left:max(12px,env(safe-area-inset-left));bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:clamp(6px,2vw,12px);touch-action:none;}",
+      ".fr-steer{width:clamp(58px,12vw,92px);height:clamp(58px,12vw,92px);border-radius:clamp(12px,2vw,18px);background:rgba(255,255,255,.16);",
       "  border:2px solid rgba(255,255,255,.42);color:#fff;font:700 34px/1 system-ui,sans-serif;",
       "  text-align:center;touch-action:none;-webkit-tap-highlight-color:transparent;}",
       ".fr-steer:active,.fr-steer.fr-active{filter:brightness(1.7);background:rgba(255,255,255,.32);}",
-      ".fr-pedals{position:absolute;right:18px;bottom:24px;",
-      "  display:flex;flex-direction:column;gap:12px;touch-action:none;}",
-      ".fr-pedal{width:84px;height:84px;border-radius:18px;",
+      ".fr-pedals{position:absolute;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));",
+      "  display:flex;flex-direction:column;gap:clamp(6px,2vw,12px);touch-action:none;}",
+      ".fr-pedal{width:clamp(58px,12vw,92px);height:clamp(58px,12vw,92px);border-radius:clamp(12px,2vw,18px);",
       "  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.35);",
       "  display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);}",
       ".fr-pedal-gas{background:rgba(80,200,120,.28);}",
       ".fr-pedal-brake{background:rgba(230,90,90,.28);}",
-      ".fr-side-btns{position:absolute;right:120px;bottom:24px;",
-      "  display:flex;flex-direction:column;gap:12px;}",
-      ".fr-sidebtn{width:64px;height:64px;border-radius:50%;",
+      ".fr-side-btns{position:absolute;right:calc(max(12px,env(safe-area-inset-right)) + clamp(70px,14vw,112px));bottom:max(12px,env(safe-area-inset-bottom));",
+      "  display:flex;flex-direction:column;gap:clamp(6px,2vw,12px);}",
+      ".fr-sidebtn{width:clamp(46px,9vw,68px);height:clamp(46px,9vw,68px);border-radius:50%;",
       "  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.35);",
       "  color:rgba(255,255,255,.9);font:700 13px/64px system-ui,sans-serif;",
       "  text-align:center;}",
@@ -174,16 +177,23 @@
         keyUp(code);
         el.classList.remove("fr-active");
       }
-      el.addEventListener("pointerdown", start, { passive: false });
-      el.addEventListener("pointerup", stop, { passive: false });
-      el.addEventListener("pointercancel", stop, { passive: false });
-      el.addEventListener("pointerleave", stop, { passive: false });
-      el.addEventListener("touchstart", start, { passive: false });
-      el.addEventListener("touchend", stop, { passive: false });
-      el.addEventListener("touchcancel", stop, { passive: false });
-      el.addEventListener("mousedown", start, { passive: false });
-      el.addEventListener("mouseup", stop, { passive: false });
-      el.addEventListener("mouseleave", stop, { passive: false });
+      el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      el.addEventListener("selectstart", function (e) { e.preventDefault(); });
+      if (window.PointerEvent) {
+        el.addEventListener("pointerdown", function (e) {
+          try { el.setPointerCapture(e.pointerId); } catch (_) {}
+          start(e);
+        }, { passive: false });
+        el.addEventListener("pointerup", stop, { passive: false });
+        el.addEventListener("pointercancel", stop, { passive: false });
+        el.addEventListener("lostpointercapture", stop, { passive: false });
+      } else {
+        el.addEventListener("touchstart", start, { passive: false });
+        el.addEventListener("touchend", stop, { passive: false });
+        el.addEventListener("touchcancel", stop, { passive: false });
+        el.addEventListener("mousedown", start, { passive: false });
+        el.addEventListener("mouseup", stop, { passive: false });
+      }
     }
     bindSteerButton("fr-steer-left", "KeyA");
     bindSteerButton("fr-steer-right", "KeyD");
@@ -193,6 +203,8 @@
     function bindButton(id, code, activeClass) {
       var el = document.getElementById(id);
       if (!el) return;
+      el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      el.addEventListener("selectstart", function (e) { e.preventDefault(); });
       var touches = 0;
       el.addEventListener(
         "touchstart",
