@@ -74,6 +74,22 @@
     };
 
     var ROAD = { head: null, tail: null, vehicleNode: null };
+    var trafficParent = null;
+    function getTrafficParent() {
+      var c = RD.car;
+      var candidate = c && (c.geo || c.vehicle || c.group);
+      if (candidate && typeof candidate.add === "function") return candidate;
+      return window.__SCENE && typeof window.__SCENE.add === "function" ? window.__SCENE : null;
+    }
+    function attachTrafficMesh(car) {
+      var parent = getTrafficParent();
+      if (!parent) return;
+      if (car.mesh.parent !== parent) {
+        if (car.mesh.parent && typeof car.mesh.parent.remove === "function") car.mesh.parent.remove(car.mesh);
+        parent.add(car.mesh);
+      }
+      trafficParent = parent;
+    }
 
     function buildCarMesh(color, isOncoming) {
       var g = new Group();
@@ -232,8 +248,18 @@
             if (this.localDistance < 8 || this.localDistance > 90) this.localDistance = this.dir < 0 ? 48 : 28;
             var sideX = -tz * CFG.LANE_HALF * this.laneDir;
             var sideZ = tx * CFG.LANE_HALF * this.laneDir;
-            this.pos.set(pp.x + tx * this.localDistance + sideX, pp.y + 0.15, pp.z + tz * this.localDistance + sideZ);
-            this.mesh.position.copy(this.pos);
+            var localX = tx * this.localDistance + sideX;
+            var localZ = tz * this.localDistance + sideZ;
+            var parent = getTrafficParent();
+            if (parent && parent !== window.__SCENE) {
+              this.pos.set(pp.x + localX, pp.y + 0.15, pp.z + localZ);
+              this.mesh.position.set(localX, 0.15, localZ);
+            } else {
+              this.pos.set(pp.x + localX, pp.y + 0.15, pp.z + localZ);
+              this.mesh.position.copy(this.pos);
+            }
+            attachTrafficMesh(this);
+            this.mesh.visible = true;
             this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
           }
         }
@@ -278,7 +304,7 @@
       if (car.dead) return false;
       STATE.cars.push(car);
       car.mesh.visible = true;
-      if (window.__SCENE && !car.mesh.parent) window.__SCENE.add(car.mesh);
+      attachTrafficMesh(car);
       // Place the mesh immediately; otherwise the first frame can leave it at (0,0,0).
       car.update(0.016);
       return true;
@@ -434,7 +460,9 @@
           STATE.cars.splice(i, 1);
           continue;
         }
+        attachTrafficMesh(c);
         c.update(dtClamped);
+        c.mesh.visible = true;
         if (window.__SCENE && !c.mesh.parent) window.__SCENE.add(c.mesh);
         c.mesh.visible = true;
         if (c.dead) continue;
