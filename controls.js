@@ -8,17 +8,27 @@
  * like physical keyboard events, so every game mode (normal cars,
  * lambo, supercar, autodrive, boost) reacts identically.
  *
- * Shown only on touch-capable devices. Desktop keeps the original UI.
+ * Shown whenever the device has touch input (phones/tablets).
+ * A mouse/keyboard does not disable them — on hybrid devices (e.g. iPad
+ * with a mouse attached) the touch controls are still visible. To hide
+ * the overlay, set window.__frNoTouchControls = true before this script
+ * loads or remove it from index.html.
  */
 (function () {
   "use strict";
 
-  var isTouchDevice =
-    ("ontouchstart" in window) ||
-    navigator.maxTouchPoints > 0 ||
-    window.matchMedia("(pointer: coarse)").matches;
+  // Force-hide override (set window.__frNoTouchControls = true to disable)
+  if (window.__frNoTouchControls) return;
 
-  if (!isTouchDevice) return;
+  var isTouchDevice =
+    ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+
+  if (!isTouchDevice) {
+    // fallback: only coarse-pointer touchless devices (very rare desktops
+    // with touchscreens disabled); desktops with mouse+touch already
+    // handled above via ontouchstart/maxTouchPoints
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+  }
 
   /* ---------- synthetic key events ---------- */
 
@@ -66,6 +76,9 @@
   }
 
   onReady(function () {
+    if (!document.body) return; // safety
+    try {
+    (function buildOverlay() {
     var overlay = document.createElement("div");
     overlay.id = "fr-mobile-controls";
     overlay.innerHTML =
@@ -89,10 +102,10 @@
     style.textContent = [
       "#fr-mobile-controls{",
       "  position:fixed;inset:0;z-index:9999;",
-      "  display:none;pointer-events:none;touch-action:none;",
+      "  display:block;pointer-events:none;touch-action:none;",
       "  -webkit-user-select:none;user-select:none;",
       "}",
-      "@media (pointer:coarse){ #fr-mobile-controls{display:block} }",
+      "#fr-mobile-controls.fr-hidden{display:none}",
       "#fr-mobile-controls > *{pointer-events:auto;}",
       ".fr-zone{position:absolute;}",
       "#fr-joystick{left:18px;bottom:24px;width:150px;height:150px;",
@@ -123,10 +136,25 @@
       "  .fr-joystick-thumb{width:50px;height:50px;}",
       "  .fr-pedal{width:68px;height:68px;}",
       "  .fr-sidebtn{width:52px;height:52px;font-size:11px;}",
-      "}";
+      "}",
     ].join("\n");
     document.head.appendChild(style);
     document.body.appendChild(overlay);
+
+    /* Keep the overlay alive if the game re-renders the page (React root rebuild) */
+    function ensureOverlay() {
+      if (overlay.parentNode !== document.body) document.body.appendChild(overlay);
+    }
+    ensureOverlay();
+    setInterval(ensureOverlay, 2000);
+    if (window.MutationObserver) {
+      new MutationObserver(ensureOverlay).observe(document.body, { childList: true });
+    }
+    })();
+    } catch (err) {
+      console.error("[fr-mobile-controls] failed to build overlay:", err);
+      return;
+    }
 
     /* ---------- joystick (steering) ---------- */
 
