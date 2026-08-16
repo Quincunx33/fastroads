@@ -142,6 +142,8 @@
       this.mesh.visible = false;
       this.mesh.frustumCulled = false;
       this.mesh.renderOrder = 20;
+      this.localDistance = dir < 0 ? 34 : 24;
+      this.localAnchorTime = 12;
       this.dead = false;
       this.recomputeDist();
     }
@@ -212,6 +214,29 @@
         edz = dz * this.dir;
       if (Math.abs(edx) + Math.abs(edz) > 1e-6) {
         this.mesh.rotation.y = Math.atan2(edx, edz);
+      }
+      // Safari/iPad can expose a different world origin while the scene is loading.
+      // For the first seconds, anchor cars to the player's active road tangent so
+      // they are definitely in the camera view rather than rendered far off-world.
+      if (this.localAnchorTime > 0 && ROAD.vehicleNode && ROAD.vehicleNode.p) {
+        var pp = RD.car && (RD.car.position || RD.car.pPosition || RD.car.pos);
+        if (pp) {
+          var rn = ROAD.vehicleNode;
+          var rn2 = rn.next || rn.prev;
+          if (rn2 && rn2.p) {
+            var tx = rn2.p.x - rn.p.x, tz = rn2.p.z - rn.p.z;
+            var tl = Math.sqrt(tx * tx + tz * tz) || 1;
+            tx /= tl; tz /= tl;
+            var pspd = Number(RD.car.speed || RD.car.pSpeed || 0);
+            this.localDistance += (this.dir > 0 ? this.speed - pspd : -this.speed) * dt;
+            if (this.localDistance < 8 || this.localDistance > 90) this.localDistance = this.dir < 0 ? 48 : 28;
+            var sideX = -tz * CFG.LANE_HALF * this.laneDir;
+            var sideZ = tx * CFG.LANE_HALF * this.laneDir;
+            this.mesh.position.set(pp.x + tx * this.localDistance + sideX, pp.y + 0.15, pp.z + tz * this.localDistance + sideZ);
+            this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
+          }
+        }
+        this.localAnchorTime -= dt;
       }
     };
 
