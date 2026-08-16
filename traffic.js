@@ -232,7 +232,8 @@
             if (this.localDistance < 8 || this.localDistance > 90) this.localDistance = this.dir < 0 ? 48 : 28;
             var sideX = -tz * CFG.LANE_HALF * this.laneDir;
             var sideZ = tx * CFG.LANE_HALF * this.laneDir;
-            this.mesh.position.set(pp.x + tx * this.localDistance + sideX, pp.y + 0.15, pp.z + tz * this.localDistance + sideZ);
+            this.pos.set(pp.x + tx * this.localDistance + sideX, pp.y + 0.15, pp.z + tz * this.localDistance + sideZ);
+            this.mesh.position.copy(this.pos);
             this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
           }
         }
@@ -434,6 +435,8 @@
           continue;
         }
         c.update(dtClamped);
+        if (window.__SCENE && !c.mesh.parent) window.__SCENE.add(c.mesh);
+        c.mesh.visible = true;
         if (c.dead) continue;
 
         // cull cars too far from player

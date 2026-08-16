@@ -97,6 +97,7 @@
       '<div class="fr-side-btns">' +
       '  <div class="fr-sidebtn fr-boost" id="fr-boost" title="Boost">BOOST</div>' +
       '  <div class="fr-sidebtn fr-hb" id="fr-handbrake" title="Handbrake">HB</div>' +
+      '  <button class="fr-sidebtn fr-recover" id="fr-recover" type="button" title="Recover">RECOVER</button>' +
       "</div>";
 
     var style = document.createElement("style");
@@ -130,7 +131,7 @@
       "  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.35);",
       "  color:rgba(255,255,255,.9);font:700 clamp(10px,2vw,13px)/1 system-ui,sans-serif;",
       "  text-align:center;display:flex;align-items:center;justify-content:center;}",
-      ".fr-boost{background:rgba(110,140,255,.3);}",
+      ".fr-boost{background:rgba(110,140,255,.3);}.fr-recover{background:rgba(255,120,90,.3);font-size:clamp(9px,1.8vw,12px);}",
       ".fr-hb{background:rgba(255,190,60,.3);}",
       ".fr-pedal.fr-active,.fr-sidebtn.fr-active{filter:brightness(1.6);}",
       ".fr-hide{display:none !important;}",
@@ -206,38 +207,68 @@
       if (!el) return;
       el.addEventListener("contextmenu", function (e) { e.preventDefault(); });
       el.addEventListener("selectstart", function (e) { e.preventDefault(); });
-      var touches = 0;
-      el.addEventListener(
-        "touchstart",
-        function (e) {
-          e.preventDefault();
-          touches++;
-          if (touches === 1) {
-            keyDown(code);
-            el.classList.add(activeClass);
-          }
-        },
-        { passive: false }
-      );
-      el.addEventListener("touchend", function () {
-        touches--;
-        if (touches <= 0) {
-          touches = 0;
-          keyUp(code);
-          el.classList.remove(activeClass);
-        }
-      });
-      el.addEventListener("touchcancel", function () {
-        touches = 0;
+      var held = false;
+      function start(e) {
+        if (e) e.preventDefault();
+        if (held) return;
+        held = true;
+        keyDown(code);
+        el.classList.add(activeClass);
+      }
+      function stop(e) {
+        if (e) e.preventDefault();
+        if (!held) return;
+        held = false;
         keyUp(code);
         el.classList.remove(activeClass);
-      });
+      }
+      if (window.PointerEvent) {
+        el.addEventListener("pointerdown", function (e) {
+          try { el.setPointerCapture(e.pointerId); } catch (_) {}
+          start(e);
+        }, { passive: false });
+        el.addEventListener("pointerup", stop, { passive: false });
+        el.addEventListener("pointercancel", stop, { passive: false });
+        el.addEventListener("lostpointercapture", stop, { passive: false });
+      } else {
+        el.addEventListener("touchstart", start, { passive: false });
+        el.addEventListener("touchend", stop, { passive: false });
+        el.addEventListener("touchcancel", stop, { passive: false });
+        el.addEventListener("mousedown", start, { passive: false });
+        el.addEventListener("mouseup", stop, { passive: false });
+        el.addEventListener("mouseleave", stop, { passive: false });
+      }
     }
 
     bindButton("fr-gas", "KeyW", "fr-active");
     bindButton("fr-brake", "KeyS", "fr-active");
     bindButton("fr-boost", "ShiftLeft", "fr-active");
     bindButton("fr-handbrake", "Space", "fr-active");
+
+    var recover = document.getElementById("fr-recover");
+    if (recover) {
+      var recoverHandled = false;
+      function doRecover(e) {
+        if (e) e.preventDefault();
+        if (e && e.type === "click" && recoverHandled) { recoverHandled = false; return; }
+        if (e && e.type === "pointerdown") recoverHandled = true;
+        try {
+          if (window.__CARCTRL && window.__ROAD && window.__ROAD.vehicleNode) {
+            window.__CARCTRL.resetToNode(window.__ROAD.vehicleNode);
+          } else {
+            keyDown("KeyR");
+            setTimeout(function () { keyUp("KeyR"); }, 80);
+          }
+        } catch (_) {
+          keyDown("KeyR");
+          setTimeout(function () { keyUp("KeyR"); }, 80);
+        }
+      }
+      recover.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+      recover.addEventListener("selectstart", function (e) { e.preventDefault(); });
+      recover.addEventListener("pointerdown", doRecover, { passive: false });
+      recover.addEventListener("click", doRecover, { passive: false });
+    }
 
     /* ---------- camera: pinch zoom ---------- */
 
