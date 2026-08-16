@@ -302,8 +302,14 @@
         var el = document.getElementById(id); if (!el) return;
         var item = LAYOUT[id];
         el.classList.toggle("fr-layout-target", layoutMode);
-        if (!item) { el.style.position = ""; el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.transform = el.style.transformOrigin = ""; el.classList.remove("fr-hide"); return; }
-        el.style.position = "fixed"; el.style.left = (item.x * 100) + "vw"; el.style.top = (item.y * 100) + "vh"; el.style.right = "auto"; el.style.bottom = "auto"; el.style.transform = "scale(" + (item.scale || 1) + ")"; el.style.transformOrigin = "center center"; el.classList.toggle("fr-hide", item.visible === false);
+        if (!item) { el.style.position = ""; el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.transform = el.style.transformOrigin = el.style.scale = ""; el.classList.remove("fr-hide"); return; }
+        el.style.position = "fixed"; el.style.left = (item.x * 100) + "vw"; el.style.top = (item.y * 100) + "vh"; el.style.right = "auto"; el.style.bottom = "auto";
+        // CSS `scale` belongs only to this selected element; it cannot resize
+        // the steering/pedal/side-button parent or any sibling button.
+        el.style.transform = "";
+        el.style.transformOrigin = "center center";
+        el.style.scale = String(item.scale || 1);
+        el.classList.toggle("fr-hide", item.visible === false);
       });
       var root = document.getElementById("fr-mobile-controls"); if (root) root.classList.toggle("fr-layout-mode", layoutMode);
     }

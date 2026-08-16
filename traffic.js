@@ -408,7 +408,11 @@
     }
 
     // ---------- main loop ----------
+    var lastTickMs = 0;
     function onFrame(dt) {
+      var nowMs = (window.performance && performance.now) ? performance.now() : Date.now();
+      if (nowMs - lastTickMs < 18) return;
+      lastTickMs = nowMs;
       if (!STATE.ready) {
         if (window.__ROAD && window.__ROAD.vehicleNode) {
           ROAD.vehicleNode = window.__ROAD.vehicleNode;
@@ -491,6 +495,14 @@
         console.error("[traffic]", e);
       }
     };
+
+    // Fallback for Safari/WebView builds where the injected game-loop hook can
+    // be skipped: 20 Hz is enough for traffic movement and avoids a heavy
+    // second render loop. The lock above prevents duplicate work when the hook
+    // is active.
+    setInterval(function () {
+      try { onFrame(0.05); } catch (e) { console.error("[traffic] fallback", e); }
+    }, 50);
 
     console.log("[traffic] initialized");
   }
