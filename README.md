@@ -36,4 +36,4 @@ This build includes mobile touch controls (`controls.js`, loaded from `index.htm
 - **BOOST** (Shift) and **HB** (handbrake/Space) buttons
 - **Pinch-to-zoom** on the world to change camera distance
 
-The controls dispatch real `KeyboardEvent`s on the game canvas, so they drive the game's own `input.key` map and work identically across all car and world modes (roadster, lambo, supercar, casual/normal/hard/wide/straight, autodrive). Desktop browsers never see the overlay. To hide the overlay on a mobile browser, add `?desktop=1` is not implemented — instead you can remove the `<script src="./controls.js"></script>` line from `index.html`.
+The controls dispatch real `KeyboardEvent`s on the game canvas, so they drive the game's own `input.key` map and work identically across all car and world modes (roadster, lambo, supercar, casual/normal/hard/wide/straight, autodrive). Desktop browsers never see the overlay. If you want to disable the mobile controls on a phone, simply remove the `<script src="./controls.js"></script>` line from `index.html`.
