@@ -218,7 +218,7 @@
       // Safari/iPad can expose a different world origin while the scene is loading.
       // For the first seconds, anchor cars to the player's active road tangent so
       // they are definitely in the camera view rather than rendered far off-world.
-      if (this.localAnchorTime > 0 && ROAD.vehicleNode && ROAD.vehicleNode.p) {
+      if (ROAD.vehicleNode && ROAD.vehicleNode.p) {
         var pp = RD.car && (RD.car.position || RD.car.pPosition || RD.car.pos);
         if (pp) {
           var rn = ROAD.vehicleNode;
@@ -236,7 +236,7 @@
             this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
           }
         }
-        this.localAnchorTime -= dt;
+        this.localAnchorTime = 999999;
       }
     };
 

@@ -12116,7 +12116,8 @@
                 try {
                   e = JSON.parse(e);
                 } catch (Tc) {}
-              console.log("SceneConfig: Load ", t, e),
+              "renderScale" == t && (e = 1),
+                console.log("SceneConfig: Load ", t, e),
                 this.set(t, e, !0),
                 (this.initialValue[t] = e);
             }
