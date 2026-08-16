@@ -72,6 +72,12 @@
   var MAP = {};
   try { MAP = Object.assign({}, DEFAULT_MAP, JSON.parse(localStorage.getItem("fr-control-map") || "{}")); } catch (_) { MAP = Object.assign({}, DEFAULT_MAP); }
   function saveMap() { try { localStorage.setItem("fr-control-map", JSON.stringify(MAP)); } catch (_) {} }
+  var layoutMode = false;
+  var LAYOUT_KEY = "fr-control-layout";
+  var LAYOUT_IDS = ["fr-steer-left", "fr-steer-right", "fr-brake", "fr-gas", "fr-boost", "fr-handbrake", "fr-recover"];
+  var LAYOUT = {};
+  try { LAYOUT = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}"); } catch (_) { LAYOUT = {}; }
+  function saveLayout() { try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(LAYOUT)); } catch (_) {} }
 
   /* ---------- overlay DOM ---------- */
 
@@ -114,6 +120,8 @@
       '<div class="fr-setting-row"><span>Boost</span><select data-action="boost"><option value="ShiftLeft">SHIFT</option><option value="Space">SPACE</option></select></div>' +
       '<div class="fr-setting-row"><span>HB</span><select data-action="handbrake"><option value="Space">SPACE</option><option value="ShiftLeft">SHIFT</option></select></div>' +
       '<div class="fr-setting-row"><span>Recover</span><select data-action="recover"><option value="KeyR">R</option><option value="Enter">ENTER</option></select></div>' +
+      '<div class="fr-layout-tools"><button id="fr-layout-edit" type="button">EDIT LAYOUT</button><button id="fr-layout-reset" type="button">RESET</button></div>' +
+      '<div class="fr-layout-options" hidden><label>Button <select id="fr-layout-target"><option value="fr-steer-left">Left</option><option value="fr-steer-right">Right</option><option value="fr-brake">Brake</option><option value="fr-gas">Gas</option><option value="fr-boost">Boost</option><option value="fr-handbrake">HB</option><option value="fr-recover">Recover</option></select></label><label>Size <input id="fr-layout-size" type="range" min="0.65" max="1.7" step="0.05" value="1"></label><label><input id="fr-layout-visible" type="checkbox" checked> Visible</label></div>' +
       '<button id="fr-settings-close" type="button">DONE</button></div>';
 
     var style = document.createElement("style");
@@ -150,7 +158,7 @@
       ".fr-boost{background:rgba(110,140,255,.3);}.fr-recover{background:rgba(255,120,90,.3);font-size:clamp(9px,1.8vw,12px);}",
       ".fr-hb{background:rgba(255,190,60,.3);}",
       ".fr-pedal.fr-active,.fr-sidebtn.fr-active{filter:brightness(1.6);}",
-      ".fr-hide{display:none !important;}.fr-settings{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));pointer-events:auto;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.35);color:#fff;font-size:22px;}.fr-settings-panel{position:absolute;top:max(62px,calc(env(safe-area-inset-top) + 54px));right:max(12px,env(safe-area-inset-right));width:min(270px,78vw);padding:14px;border-radius:14px;background:rgba(15,18,24,.94);color:#fff;pointer-events:auto;font:13px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.45);}.fr-settings-panel[hidden]{display:none;}.fr-settings-title{font-weight:700;letter-spacing:1px;margin-bottom:8px}.fr-setting-row{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:7px 0}.fr-setting-row select{min-width:92px;padding:5px;border-radius:6px}.fr-settings-panel button{margin-top:8px;width:100%;padding:7px;border-radius:7px;border:0;}",
+      ".fr-hide{display:none !important;}.fr-settings{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));pointer-events:auto;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.35);color:#fff;font-size:22px;}.fr-settings-panel{position:absolute;top:max(62px,calc(env(safe-area-inset-top) + 54px));right:max(12px,env(safe-area-inset-right));width:min(270px,78vw);padding:14px;border-radius:14px;background:rgba(15,18,24,.94);color:#fff;pointer-events:auto;font:13px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.45);}.fr-settings-panel[hidden]{display:none;}.fr-settings-title{font-weight:700;letter-spacing:1px;margin-bottom:8px}.fr-setting-row{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:7px 0}.fr-setting-row select{min-width:92px;padding:5px;border-radius:6px}.fr-settings-panel button{margin-top:8px;width:100%;padding:7px;border-radius:7px;border:0;}.fr-layout-tools{display:flex;gap:6px}.fr-layout-tools button{font-size:10px}.fr-layout-options{margin-top:8px}.fr-layout-options label{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:7px 0}.fr-layout-options input[type=range]{width:120px}.fr-layout-mode .fr-layout-target{outline:2px dashed #ffe45b;outline-offset:3px;touch-action:none;cursor:move;}",
       "@media (max-height:700px){",
       "  .fr-steer-buttons,.fr-pedals,.fr-side-btns{bottom:max(12px,env(safe-area-inset-bottom),5vh);}",
       "  .fr-steer{width:68px;height:68px;font-size:28px;}",
@@ -182,6 +190,7 @@
       if (!el) return;
       var held = false;
       function start(e) {
+        if (layoutMode) return;
         if (e) e.preventDefault();
         if (held) return;
         held = true;
@@ -225,6 +234,7 @@
       el.addEventListener("selectstart", function (e) { e.preventDefault(); });
       var held = false;
       function start(e) {
+        if (layoutMode) return;
         if (e) e.preventDefault();
         if (held) return;
         held = true;
@@ -265,6 +275,7 @@
     if (recover) {
       var recoverHandled = false;
       function doRecover(e) {
+        if (layoutMode) return;
         if (e) e.preventDefault();
         if (e && e.type === "click" && recoverHandled) { recoverHandled = false; return; }
         if (e && e.type === "pointerdown") recoverHandled = true;
@@ -286,6 +297,33 @@
       recover.addEventListener("click", doRecover, { passive: false });
     }
 
+    function applyLayout() {
+      LAYOUT_IDS.forEach(function (id) {
+        var el = document.getElementById(id); if (!el) return;
+        var item = LAYOUT[id];
+        el.classList.toggle("fr-layout-target", layoutMode);
+        if (!item) { el.style.position = ""; el.style.left = el.style.top = el.style.right = el.style.bottom = el.style.transform = el.style.transformOrigin = ""; el.classList.remove("fr-hide"); return; }
+        el.style.position = "fixed"; el.style.left = (item.x * 100) + "vw"; el.style.top = (item.y * 100) + "vh"; el.style.right = "auto"; el.style.bottom = "auto"; el.style.transform = "scale(" + (item.scale || 1) + ")"; el.style.transformOrigin = "center center"; el.classList.toggle("fr-hide", item.visible === false);
+      });
+      var root = document.getElementById("fr-mobile-controls"); if (root) root.classList.toggle("fr-layout-mode", layoutMode);
+    }
+    function layoutInputSync() {
+      var target = document.getElementById("fr-layout-target"), size = document.getElementById("fr-layout-size"), visible = document.getElementById("fr-layout-visible");
+      if (!target || !size || !visible) return; var item = LAYOUT[target.value] || {}; size.value = item.scale || 1; visible.checked = item.visible !== false;
+    }
+    function bindLayoutDrag(el) {
+      if (!el || el.__frLayoutBound) return; el.__frLayoutBound = true;
+      el.addEventListener("pointerdown", function (e) {
+        if (!layoutMode) return; e.preventDefault(); e.stopPropagation();
+        var rect = el.getBoundingClientRect(), ox = e.clientX - rect.left, oy = e.clientY - rect.top;
+        try { el.setPointerCapture(e.pointerId); } catch (_) {}
+        function move(ev) { var item = LAYOUT[el.id] || {scale:1,visible:true}; item.x = Math.max(0, Math.min(1, (ev.clientX - ox) / innerWidth)); item.y = Math.max(0, Math.min(1, (ev.clientY - oy) / innerHeight)); LAYOUT[el.id] = item; applyLayout(); }
+        function up() { el.removeEventListener("pointermove", move); saveLayout(); }
+        el.addEventListener("pointermove", move, {passive:false}); el.addEventListener("pointerup", up, {once:true});
+      }, {passive:false});
+    }
+    LAYOUT_IDS.forEach(function (id) { bindLayoutDrag(document.getElementById(id)); });
+    applyLayout();
     var settingsBtn = document.getElementById("fr-settings");
     var settingsPanel = document.getElementById("fr-settings-panel");
     if (settingsBtn && settingsPanel) {
@@ -301,6 +339,12 @@
         e.preventDefault();
         settingsPanel.hidden = !settingsPanel.hidden;
       });
+      var layoutEdit = document.getElementById("fr-layout-edit"), layoutReset = document.getElementById("fr-layout-reset"), layoutOptions = document.querySelector(".fr-layout-options"), layoutTarget = document.getElementById("fr-layout-target"), layoutSize = document.getElementById("fr-layout-size"), layoutVisible = document.getElementById("fr-layout-visible");
+      if (layoutEdit) layoutEdit.addEventListener("click", function (e) { e.preventDefault(); layoutMode = !layoutMode; layoutEdit.textContent = layoutMode ? "DONE LAYOUT" : "EDIT LAYOUT"; if (layoutOptions) layoutOptions.hidden = !layoutMode; applyLayout(); layoutInputSync(); });
+      if (layoutReset) layoutReset.addEventListener("click", function (e) { e.preventDefault(); LAYOUT = {}; saveLayout(); applyLayout(); layoutInputSync(); });
+      if (layoutTarget) layoutTarget.addEventListener("change", layoutInputSync);
+      if (layoutSize) layoutSize.addEventListener("input", function () { if (!layoutTarget) return; var item = LAYOUT[layoutTarget.value] || {x:.1,y:.1,visible:true}; item.scale = Number(layoutSize.value); LAYOUT[layoutTarget.value] = item; saveLayout(); applyLayout(); });
+      if (layoutVisible) layoutVisible.addEventListener("change", function () { if (!layoutTarget) return; var item = LAYOUT[layoutTarget.value] || {x:.1,y:.1,scale:1}; item.visible = layoutVisible.checked; LAYOUT[layoutTarget.value] = item; saveLayout(); applyLayout(); });
       var closeSettings = document.getElementById("fr-settings-close");
       if (closeSettings) closeSettings.addEventListener("click", function (e) {
         e.preventDefault();
