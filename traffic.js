@@ -246,21 +246,26 @@
             var pspd = Number(RD.car.speed || RD.car.pSpeed || 0);
             this.localDistance += (this.dir > 0 ? this.speed - pspd : -this.speed) * dt;
             if (this.localDistance < 8 || this.localDistance > 90) this.localDistance = this.dir < 0 ? 48 : 28;
-            var sideX = -tz * CFG.LANE_HALF * this.laneDir;
-            var sideZ = tx * CFG.LANE_HALF * this.laneDir;
-            var localX = tx * this.localDistance + sideX;
-            var localZ = tz * this.localDistance + sideZ;
             var parent = getTrafficParent();
             if (parent && parent !== window.__SCENE) {
+              // The player geo uses local -X as the road-facing forward axis.
+              // Keep the cars in this same hierarchy so they inherit the active
+              // world origin and camera transform instead of using stale road XYZ.
+              var localX = -this.localDistance;
+              var localZ = CFG.LANE_HALF * this.laneDir;
               this.pos.set(pp.x + localX, pp.y + 0.15, pp.z + localZ);
               this.mesh.position.set(localX, 0.15, localZ);
+              this.mesh.rotation.y = this.dir > 0 ? 0 : Math.PI;
             } else {
-              this.pos.set(pp.x + localX, pp.y + 0.15, pp.z + localZ);
+              var worldX = pp.x + tx * this.localDistance - tz * CFG.LANE_HALF * this.laneDir;
+              var worldZ = pp.z + tz * this.localDistance + tx * CFG.LANE_HALF * this.laneDir;
+              this.pos.set(worldX, pp.y + 0.15, worldZ);
               this.mesh.position.copy(this.pos);
+              this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
             }
             attachTrafficMesh(this);
             this.mesh.visible = true;
-            this.mesh.rotation.y = Math.atan2(this.dir > 0 ? tx : -tx, this.dir > 0 ? tz : -tz);
+            this.mesh.frustumCulled = false;
           }
         }
         this.localAnchorTime = 999999;
