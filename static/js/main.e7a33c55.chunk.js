@@ -12035,7 +12035,7 @@
           viewLodIndex: 2,
           detailLodIndex: 1,
           antialias: !0,
-          renderScale: 2,
+          renderScale: 1,
         };
       var dr = new (class extends m {
           constructor() {
