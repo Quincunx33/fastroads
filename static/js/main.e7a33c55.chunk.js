@@ -1163,7 +1163,7 @@
       localStorage.removeItem("start-node");
       We > 0 && (We -= 5);
       var Ue = i(23);
-      const Ve = {
+      var Ve = {
           discretisedTail: null,
           head: null,
           tail: null,
@@ -1384,6 +1384,40 @@
           );
         };
       var Ke = Ve;
+      window.__ROAD = {
+        head: Ve.head,
+        tail: Ve.tail,
+        vehicleNode: Ke.vehicleNode,
+        r: r,
+        car: z,
+      };
+      (function () {
+        var _m = {};
+        for (var _k in r) {
+          try {
+            var _it = new r[_k]();
+            if (_it && _it.type) _m[_it.type] = r[_k];
+            try {
+              if (_it && _it.isVector3) _m.Vector3 = r[_k];
+            } catch (_e) {}
+          } catch (_e) {}
+        }
+        try {
+          var _cy = new r.CylinderGeometry && new r.CylinderGeometry(1, 1, 1);
+        } catch (_e) {}
+        try {
+          for (var _j = 0; _j < 2; _j++) {
+            for (var _kk in r) {
+              try {
+                var _it2 = _j === 0 ? new r[_kk](1, 1, 1) : new r[_kk](1, 1);
+                if (_it2 && _it2.type) _m[_it2.type] = r[_kk];
+                try { if (_it2 && _it2.isCylinderGeometry) _m.CylinderGeometry = r[_kk]; } catch (_e) {}
+              } catch (_e) {}
+            }
+          }
+        } catch (_e) {}
+        window.__ROAD.g = _m;
+      })();
       const _e = new r.U(0, 1, 0),
         $e = {};
       class et {
@@ -17004,7 +17038,8 @@
         zl = { turnSpeed: 0, turnAccel: 0, pTurnSpeed: 0 };
       var kl = class {
         constructor() {
-          (this.inputs = {
+          (window.__CARCTRL = this),
+            (this.inputs = {
             accel: 0,
             steer: 0,
             brake: 0,
@@ -17476,7 +17511,9 @@
             (this.pdT = e),
             (Ke.vehicleIndexDidChange = !1),
             this.updateVehicleNode();
+          (window.__ROAD.vehicleNode = Ke.vehicleNode);
           try {
+            window.__onFrame && window.__onFrame(e);
             this.audio.update(e);
           } catch (Tc) {
             if ((this.handleCrash(), this.didCrash))
@@ -19088,7 +19125,7 @@
               this.scene.add(Do.container),
               this.scene.add(z),
               this.setSize(e.offsetWidth, e.offsetHeight),
-              this.render();
+              (window.__SCENE = this.scene),               this.render();
           }
           toggleCamera() {
             this.camController &&
