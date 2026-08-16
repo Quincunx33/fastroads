@@ -30,12 +30,10 @@
   }
 
   function hideControlsOnAbout() {
+    // Keep gameplay controls and Settings visible. The original visibility test
+    // treated the hidden About container as visible on some Safari layouts.
     var overlay = document.getElementById("fr-mobile-controls");
-    var about = document.getElementById("about");
-    if (!overlay || !about) return;
-    var s = window.getComputedStyle(about);
-    var visible = s.display !== "none" && s.visibility !== "hidden" && about.getBoundingClientRect().height > 0;
-    overlay.classList.toggle("fr-about-hidden", visible);
+    if (overlay) overlay.classList.remove("fr-about-hidden");
   }
 
   function apply() {
