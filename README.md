@@ -26,3 +26,14 @@ to start the server. `http-server` will print the address to connect to - this w
 # Contributing
 
 Any contributions are welcome. I am working on improving the handling of the new cars and giving them textures as well as fixing the ultra+ bug. I am also naming minified variables as I figure out what they mean.
+
+# Mobile Touch Controls
+
+This build includes mobile touch controls (`controls.js`, loaded from `index.html`). On touch-capable devices (phones and tablets) an overlay appears with:
+
+- A left-side **joystick** for steering (maps to A/D keys)
+- **Gas** (green pedal, W) and **Brake/Reverse** (red pedal, S) pedals on the right
+- **BOOST** (Shift) and **HB** (handbrake/Space) buttons
+- **Pinch-to-zoom** on the world to change camera distance
+
+The controls dispatch real `KeyboardEvent`s on the game canvas, so they drive the game's own `input.key` map and work identically across all car and world modes (roadster, lambo, supercar, casual/normal/hard/wide/straight, autodrive). Desktop browsers never see the overlay. To hide the overlay on a mobile browser, add `?desktop=1` is not implemented — instead you can remove the `<script src="./controls.js"></script>` line from `index.html`.
