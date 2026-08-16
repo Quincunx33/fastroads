@@ -15,6 +15,10 @@
   <a href="#run-locally">Run locally</a>
 </p>
 
+## Live demo
+
+Play the latest online build at **[driveinfinity.pages.dev](https://driveinfinity.pages.dev/)**.
+
 ## Overview
 
 Fast Roads is a customized, mobile-friendly edition of the slow-roads driving experience. It keeps the meditative open-road feel while adding practical touch controls, configurable layouts, two-way AI traffic, collision feedback, and an installable offline-capable PWA shell.
