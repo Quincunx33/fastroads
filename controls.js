@@ -68,6 +68,11 @@
     );
   }
 
+  var DEFAULT_MAP = { left: "KeyA", right: "KeyD", gas: "KeyW", brake: "KeyS", boost: "ShiftLeft", handbrake: "Space", recover: "KeyR" };
+  var MAP = {};
+  try { MAP = Object.assign({}, DEFAULT_MAP, JSON.parse(localStorage.getItem("fr-control-map") || "{}")); } catch (_) { MAP = Object.assign({}, DEFAULT_MAP); }
+  function saveMap() { try { localStorage.setItem("fr-control-map", JSON.stringify(MAP)); } catch (_) {} }
+
   /* ---------- overlay DOM ---------- */
 
   function onReady(cb) {
@@ -94,11 +99,22 @@
       '    <svg viewBox="0 0 24 24"><path d="M12 4v16M4 12h16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>' +
       "  </div>" +
       "</div>" +
+      '<button class="fr-settings" id="fr-settings" type="button" aria-label="Control settings">⚙</button>' +
       '<div class="fr-side-btns">' +
       '  <div class="fr-sidebtn fr-boost" id="fr-boost" title="Boost">BOOST</div>' +
       '  <div class="fr-sidebtn fr-hb" id="fr-handbrake" title="Handbrake">HB</div>' +
       '  <button class="fr-sidebtn fr-recover" id="fr-recover" type="button" title="Recover">RECOVER</button>' +
-      "</div>";
+      "</div>" +
+      '<div class="fr-settings-panel" id="fr-settings-panel" hidden>' +
+      '<div class="fr-settings-title">CONTROL SETTINGS</div>' +
+      '<div class="fr-setting-row"><span>Left</span><select data-action="left"><option value="KeyA">A</option><option value="ArrowLeft">←</option></select></div>' +
+      '<div class="fr-setting-row"><span>Right</span><select data-action="right"><option value="KeyD">D</option><option value="ArrowRight">→</option></select></div>' +
+      '<div class="fr-setting-row"><span>Gas</span><select data-action="gas"><option value="KeyW">W</option><option value="ArrowUp">↑</option></select></div>' +
+      '<div class="fr-setting-row"><span>Brake</span><select data-action="brake"><option value="KeyS">S</option><option value="ArrowDown">↓</option></select></div>' +
+      '<div class="fr-setting-row"><span>Boost</span><select data-action="boost"><option value="ShiftLeft">SHIFT</option><option value="Space">SPACE</option></select></div>' +
+      '<div class="fr-setting-row"><span>HB</span><select data-action="handbrake"><option value="Space">SPACE</option><option value="ShiftLeft">SHIFT</option></select></div>' +
+      '<div class="fr-setting-row"><span>Recover</span><select data-action="recover"><option value="KeyR">R</option><option value="Enter">ENTER</option></select></div>' +
+      '<button id="fr-settings-close" type="button">DONE</button></div>';
 
     var style = document.createElement("style");
     style.textContent = [
@@ -134,7 +150,7 @@
       ".fr-boost{background:rgba(110,140,255,.3);}.fr-recover{background:rgba(255,120,90,.3);font-size:clamp(9px,1.8vw,12px);}",
       ".fr-hb{background:rgba(255,190,60,.3);}",
       ".fr-pedal.fr-active,.fr-sidebtn.fr-active{filter:brightness(1.6);}",
-      ".fr-hide{display:none !important;}",
+      ".fr-hide{display:none !important;}.fr-settings{position:absolute;top:max(12px,env(safe-area-inset-top));right:max(12px,env(safe-area-inset-right));pointer-events:auto;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(0,0,0,.35);color:#fff;font-size:22px;}.fr-settings-panel{position:absolute;top:max(62px,calc(env(safe-area-inset-top) + 54px));right:max(12px,env(safe-area-inset-right));width:min(270px,78vw);padding:14px;border-radius:14px;background:rgba(15,18,24,.94);color:#fff;pointer-events:auto;font:13px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.45);}.fr-settings-panel[hidden]{display:none;}.fr-settings-title{font-weight:700;letter-spacing:1px;margin-bottom:8px}.fr-setting-row{display:flex;justify-content:space-between;align-items:center;gap:18px;margin:7px 0}.fr-setting-row select{min-width:92px;padding:5px;border-radius:6px}.fr-settings-panel button{margin-top:8px;width:100%;padding:7px;border-radius:7px;border:0;}",
       "@media (max-height:700px){",
       "  .fr-steer-buttons,.fr-pedals,.fr-side-btns{bottom:max(12px,env(safe-area-inset-bottom),5vh);}",
       "  .fr-steer{width:68px;height:68px;font-size:28px;}",
@@ -197,8 +213,8 @@
         el.addEventListener("mouseup", stop, { passive: false });
       }
     }
-    bindSteerButton("fr-steer-left", "KeyA");
-    bindSteerButton("fr-steer-right", "KeyD");
+    bindSteerButton("fr-steer-left", MAP.left);
+    bindSteerButton("fr-steer-right", MAP.right);
 
     /* ---------- pedals & side buttons ---------- */
 
@@ -240,10 +256,10 @@
       }
     }
 
-    bindButton("fr-gas", "KeyW", "fr-active");
-    bindButton("fr-brake", "KeyS", "fr-active");
-    bindButton("fr-boost", "ShiftLeft", "fr-active");
-    bindButton("fr-handbrake", "Space", "fr-active");
+    bindButton("fr-gas", MAP.gas, "fr-active");
+    bindButton("fr-brake", MAP.brake, "fr-active");
+    bindButton("fr-boost", MAP.boost, "fr-active");
+    bindButton("fr-handbrake", MAP.handbrake, "fr-active");
 
     var recover = document.getElementById("fr-recover");
     if (recover) {
@@ -256,18 +272,40 @@
           if (window.__CARCTRL && window.__ROAD && window.__ROAD.vehicleNode) {
             window.__CARCTRL.resetToNode(window.__ROAD.vehicleNode);
           } else {
-            keyDown("KeyR");
-            setTimeout(function () { keyUp("KeyR"); }, 80);
+            keyDown(MAP.recover);
+            setTimeout(function () { keyUp(MAP.recover); }, 80);
           }
         } catch (_) {
-          keyDown("KeyR");
-          setTimeout(function () { keyUp("KeyR"); }, 80);
+          keyDown(MAP.recover);
+          setTimeout(function () { keyUp(MAP.recover); }, 80);
         }
       }
       recover.addEventListener("contextmenu", function (e) { e.preventDefault(); });
       recover.addEventListener("selectstart", function (e) { e.preventDefault(); });
       recover.addEventListener("pointerdown", doRecover, { passive: false });
       recover.addEventListener("click", doRecover, { passive: false });
+    }
+
+    var settingsBtn = document.getElementById("fr-settings");
+    var settingsPanel = document.getElementById("fr-settings-panel");
+    if (settingsBtn && settingsPanel) {
+      settingsPanel.querySelectorAll("select[data-action]").forEach(function (select) {
+        var action = select.getAttribute("data-action");
+        if (MAP[action]) select.value = MAP[action];
+        select.addEventListener("change", function () {
+          MAP[action] = select.value;
+          saveMap();
+        });
+      });
+      settingsBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        settingsPanel.hidden = !settingsPanel.hidden;
+      });
+      var closeSettings = document.getElementById("fr-settings-close");
+      if (closeSettings) closeSettings.addEventListener("click", function (e) {
+        e.preventDefault();
+        settingsPanel.hidden = true;
+      });
     }
 
     /* ---------- camera: pinch zoom ---------- */
