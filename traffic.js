@@ -76,10 +76,13 @@
     var ROAD = { head: null, tail: null, vehicleNode: null };
     var trafficParent = null;
     function getTrafficParent() {
+      // Always use the active rendered scene when available. The vehicle's
+      // internal groups are physics/model containers and can be hidden by the
+      // camera controller, which made traffic exist but not appear on screen.
+      if (window.__SCENE && typeof window.__SCENE.add === "function") return window.__SCENE;
       var c = RD.car;
       var candidate = c && (c.geo || c.vehicle || c.group);
-      if (candidate && typeof candidate.add === "function") return candidate;
-      return window.__SCENE && typeof window.__SCENE.add === "function" ? window.__SCENE : null;
+      return candidate && typeof candidate.add === "function" ? candidate : null;
     }
     function attachTrafficMesh(car) {
       var parent = getTrafficParent();
@@ -158,7 +161,7 @@
       this.mesh.visible = false;
       this.mesh.frustumCulled = false;
       this.mesh.renderOrder = 20;
-      this.localDistance = dir < 0 ? 34 : 24;
+      this.localDistance = dir < 0 ? 18 : 22;
       this.localAnchorTime = 12;
       this.dead = false;
       this.recomputeDist();
@@ -245,7 +248,7 @@
             tx /= tl; tz /= tl;
             var pspd = Number(RD.car.speed || RD.car.pSpeed || 0);
             this.localDistance += (this.dir > 0 ? this.speed - pspd : -this.speed) * dt;
-            if (this.localDistance < 8 || this.localDistance > 90) this.localDistance = this.dir < 0 ? 48 : 28;
+            if (this.localDistance < 9 || this.localDistance > 42) this.localDistance = this.dir < 0 ? 20 : 24;
             var parent = getTrafficParent();
             if (parent && parent !== window.__SCENE) {
               // The player geo uses local -X as the road-facing forward axis.

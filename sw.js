@@ -1,10 +1,10 @@
-const CACHE = 'fastroads-pwa-v3';
+const CACHE = 'fastroads-pwa-v4';
 const CORE = [
   './',
   './index.html',
   './manifest.json',
   './controls.js?v=7',
-  './traffic.js?v=35',
+  './traffic.js?v=37',
   './ui-custom.js?v=2',
   './static/css/main.a473f648.chunk.css',
   './static/js/2.f5fa8177.chunk.js?v=2',
