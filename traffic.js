@@ -76,13 +76,15 @@
     var ROAD = { head: null, tail: null, vehicleNode: null };
     var trafficParent = null;
     function getTrafficParent() {
-      // Always use the active rendered scene when available. The vehicle's
-      // internal groups are physics/model containers and can be hidden by the
-      // camera controller, which made traffic exist but not appear on screen.
-      if (window.__SCENE && typeof window.__SCENE.add === "function") return window.__SCENE;
+      // Keep traffic in the player's rendered vehicle hierarchy. The road uses
+      // a moving/local origin, so placing these meshes directly in __SCENE can
+      // leave them far away from the camera even though they were spawned.
+      // The vehicle hierarchy shares the active origin and camera transform.
       var c = RD.car;
       var candidate = c && (c.geo || c.vehicle || c.group);
-      return candidate && typeof candidate.add === "function" ? candidate : null;
+      if (candidate && typeof candidate.add === "function") return candidate;
+      if (window.__SCENE && typeof window.__SCENE.add === "function") return window.__SCENE;
+      return null;
     }
     function attachTrafficMesh(car) {
       var parent = getTrafficParent();
@@ -234,9 +236,9 @@
       if (Math.abs(edx) + Math.abs(edz) > 1e-6) {
         this.mesh.rotation.y = Math.atan2(edx, edz);
       }
-      // Safari/iPad can expose a different world origin while the scene is loading.
-      // For the first seconds, anchor cars to the player's active road tangent so
-      // they are definitely in the camera view rather than rendered far off-world.
+      // Anchor cars to the player's active vehicle hierarchy. This avoids mixing
+      // road-world coordinates with the game's moving/local render origin and
+      // keeps spawned traffic in the camera view on desktop and mobile.
       if (ROAD.vehicleNode && ROAD.vehicleNode.p) {
         var pp = RD.car && (RD.car.position || RD.car.pPosition || RD.car.pos);
         if (pp) {
