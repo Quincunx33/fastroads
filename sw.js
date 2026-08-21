@@ -9,7 +9,10 @@ const CORE = [
   './static/css/main.a473f648.chunk.css',
   './static/js/2.f5fa8177.chunk.js?v=2',
   './static/js/main.e7a33c55.chunk.js?v=5',
-  './static/media/favicon_circle_white.eb1953e3.svg'
+  './static/media/favicon_circle_white.eb1953e3.svg',
+  './static/media/fastroads-icon-192.png',
+  './static/media/fastroads-icon-512.png',
+  './static/media/fastroads-apple-touch-icon.png'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
